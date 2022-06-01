@@ -9,6 +9,7 @@ from mpkit_cc import Mptools
 from cv2 import FONT_HERSHEY_SIMPLEX, circle,imshow, moveWindow, putText, rectangle,waitKey,destroyAllWindows
 from mediapipe.python.solutions.drawing_utils import _normalized_to_pixel_coordinates
 from numpy import zeros
+from pickle import dump,load
 
 width, height = 1280,720
 mp = Mptools(hand_no=1,win_height=height,win_width=width)
@@ -19,7 +20,6 @@ BLUE = (255,0,0)
 WHITE = (255,255,255)
 a = 1
 key_points = [0,2,4,5,8,9,12,13,16,17,20]
-train = True
 tol = 10
 known_gesture = []
 train_num = 0
@@ -71,15 +71,37 @@ def find_gesture(known_gesture,unknown_gesture,key_points,gesture_names,tol):
 
     return match
 
-num_gesture = int(input("How many Gestures do you have: "))
-print('')
-
-gesture_names = []
-for i in range(0,num_gesture,1):
-    name = input(f"Please, Enter the name of your Gesture #{i + 1}: ")
-    gesture_names.append(name)
-
+permission = int(input("To train the model press '0' and to recognize gesture press '1': "))
 print("")
+
+if permission == 0:
+    num_gesture = int(input("How many Gestures do you have: "))
+    print('')
+
+    gesture_names = []
+    for i in range(0,num_gesture,1):
+        name = input(f"Please, Enter the name of your Gesture #{i + 1}: ")
+        gesture_names.append(name)
+
+    print("")
+    file_name = input("In which file save the training data (to use default file press 'Enter'): ")
+    print("")
+    train = True
+
+if permission == 1:
+    file_name = input("In which training file read the training data (to use default file press 'Enter'): ")
+    print("")
+    if file_name == "":
+        file_name = "Default.pkl"
+    else:
+        file_name = f"{file_name}.pkl"
+
+    with open(file_name,"rb") as r:
+        gesture_names = load(r)
+        known_gesture = load(r)
+    print(f"All Training data is get from {file_name}")
+    print("")
+    train = False
 
 while cam.isOpened():
     success,image = cam.read()
@@ -104,6 +126,16 @@ while cam.isOpened():
                     a = 1
                     if train_num == num_gesture:
                         print("\nAll Trainings are done!")
+                        print("")
+                        if file_name == "":
+                            file_name = "Default.pkl"
+                        else:
+                            file_name = f"{file_name}.pkl"
+
+                        with open(file_name,"wb") as w:
+                            dump(gesture_names,w)
+                            dump(known_gesture,w)
+                        print(f"All training data is uploaded to {file_name}")
                         train = False
 
     if train == False:
